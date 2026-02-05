@@ -412,7 +412,9 @@ bool dwgReader21::readDwgClasses(){
 
     /*******************************/
 
-    duint32 endDataPos = maxClassNum-499;
+    // Classes 0-499 are built-in; custom classes start at 500.
+    // If maxClassNum <= 499, there are no custom classes to parse.
+    duint32 endDataPos = (maxClassNum > 499) ? (maxClassNum - 499) : 0;
     DRW_DBG("\nbuff.getPosition: "); DRW_DBG(buff.getPosition());
     for (duint32 i= 0; i<endDataPos;i++) {
         DRW_Class *cl = new DRW_Class();

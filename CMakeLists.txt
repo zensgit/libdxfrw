@@ -102,3 +102,13 @@ add_executable(test_attributes tests/test_attributes.cpp)
 target_include_directories(test_attributes PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests)
 target_link_libraries(test_attributes dxfrw ${ICONV_LIBRARY})
 add_test(NAME AttributeTests COMMAND test_attributes)
+
+add_executable(test_class_underflow tests/test_class_underflow.cpp)
+target_include_directories(test_class_underflow PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests)
+target_link_libraries(test_class_underflow dxfrw ${ICONV_LIBRARY})
+add_test(NAME ClassUnderflowTests COMMAND test_class_underflow)
+
+add_executable(test_dwg_classes tests/test_dwg_classes.cpp)
+target_include_directories(test_dwg_classes PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/tests)
+target_link_libraries(test_dwg_classes dxfrw ${ICONV_LIBRARY})
+add_test(NAME DWGClassParsingTests COMMAND test_dwg_classes)
