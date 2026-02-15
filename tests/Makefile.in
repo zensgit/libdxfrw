@@ -90,11 +90,15 @@ host_triplet = @host@
 TESTS = test_basic$(EXEEXT) test_entities$(EXEEXT) \
 	test_polylines$(EXEEXT) test_text$(EXEEXT) \
 	test_tables$(EXEEXT) test_blocks$(EXEEXT) \
-	test_versions$(EXEEXT) test_errors$(EXEEXT)
+	test_versions$(EXEEXT) test_errors$(EXEEXT) \
+	test_dimensions$(EXEEXT) test_annotations$(EXEEXT) \
+	test_attributes$(EXEEXT)
 check_PROGRAMS = test_basic$(EXEEXT) test_entities$(EXEEXT) \
 	test_polylines$(EXEEXT) test_text$(EXEEXT) \
 	test_tables$(EXEEXT) test_blocks$(EXEEXT) \
-	test_versions$(EXEEXT) test_errors$(EXEEXT)
+	test_versions$(EXEEXT) test_errors$(EXEEXT) \
+	test_dimensions$(EXEEXT) test_annotations$(EXEEXT) \
+	test_attributes$(EXEEXT)
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -107,16 +111,28 @@ DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am_test_basic_OBJECTS = test_basic-test_basic.$(OBJEXT)
-test_basic_OBJECTS = $(am_test_basic_OBJECTS)
-test_basic_DEPENDENCIES = $(top_builddir)/src/libdxfrw.la
+am_test_annotations_OBJECTS =  \
+	test_annotations-test_annotations.$(OBJEXT)
+test_annotations_OBJECTS = $(am_test_annotations_OBJECTS)
+test_annotations_DEPENDENCIES = $(top_builddir)/src/libdxfrw.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am_test_attributes_OBJECTS =  \
+	test_attributes-test_attributes.$(OBJEXT)
+test_attributes_OBJECTS = $(am_test_attributes_OBJECTS)
+test_attributes_DEPENDENCIES = $(top_builddir)/src/libdxfrw.la
+am_test_basic_OBJECTS = test_basic-test_basic.$(OBJEXT)
+test_basic_OBJECTS = $(am_test_basic_OBJECTS)
+test_basic_DEPENDENCIES = $(top_builddir)/src/libdxfrw.la
 am_test_blocks_OBJECTS = test_blocks-test_blocks.$(OBJEXT)
 test_blocks_OBJECTS = $(am_test_blocks_OBJECTS)
 test_blocks_DEPENDENCIES = $(top_builddir)/src/libdxfrw.la
+am_test_dimensions_OBJECTS =  \
+	test_dimensions-test_dimensions.$(OBJEXT)
+test_dimensions_OBJECTS = $(am_test_dimensions_OBJECTS)
+test_dimensions_DEPENDENCIES = $(top_builddir)/src/libdxfrw.la
 am_test_entities_OBJECTS = test_entities-test_entities.$(OBJEXT)
 test_entities_OBJECTS = $(am_test_entities_OBJECTS)
 test_entities_DEPENDENCIES = $(top_builddir)/src/libdxfrw.la
@@ -150,8 +166,12 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/test_basic-test_basic.Po \
+am__depfiles_remade =  \
+	./$(DEPDIR)/test_annotations-test_annotations.Po \
+	./$(DEPDIR)/test_attributes-test_attributes.Po \
+	./$(DEPDIR)/test_basic-test_basic.Po \
 	./$(DEPDIR)/test_blocks-test_blocks.Po \
+	./$(DEPDIR)/test_dimensions-test_dimensions.Po \
 	./$(DEPDIR)/test_entities-test_entities.Po \
 	./$(DEPDIR)/test_errors-test_errors.Po \
 	./$(DEPDIR)/test_polylines-test_polylines.Po \
@@ -195,14 +215,18 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(test_basic_SOURCES) $(test_blocks_SOURCES) \
-	$(test_entities_SOURCES) $(test_errors_SOURCES) \
-	$(test_polylines_SOURCES) $(test_tables_SOURCES) \
-	$(test_text_SOURCES) $(test_versions_SOURCES)
-DIST_SOURCES = $(test_basic_SOURCES) $(test_blocks_SOURCES) \
-	$(test_entities_SOURCES) $(test_errors_SOURCES) \
-	$(test_polylines_SOURCES) $(test_tables_SOURCES) \
-	$(test_text_SOURCES) $(test_versions_SOURCES)
+SOURCES = $(test_annotations_SOURCES) $(test_attributes_SOURCES) \
+	$(test_basic_SOURCES) $(test_blocks_SOURCES) \
+	$(test_dimensions_SOURCES) $(test_entities_SOURCES) \
+	$(test_errors_SOURCES) $(test_polylines_SOURCES) \
+	$(test_tables_SOURCES) $(test_text_SOURCES) \
+	$(test_versions_SOURCES)
+DIST_SOURCES = $(test_annotations_SOURCES) $(test_attributes_SOURCES) \
+	$(test_basic_SOURCES) $(test_blocks_SOURCES) \
+	$(test_dimensions_SOURCES) $(test_entities_SOURCES) \
+	$(test_errors_SOURCES) $(test_polylines_SOURCES) \
+	$(test_tables_SOURCES) $(test_text_SOURCES) \
+	$(test_versions_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -585,6 +609,15 @@ test_versions_LDADD = $(top_builddir)/src/libdxfrw.la
 test_errors_SOURCES = test_errors.cpp test_interface.h
 test_errors_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/tests
 test_errors_LDADD = $(top_builddir)/src/libdxfrw.la
+test_dimensions_SOURCES = test_dimensions.cpp test_interface.h
+test_dimensions_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/tests
+test_dimensions_LDADD = $(top_builddir)/src/libdxfrw.la
+test_annotations_SOURCES = test_annotations.cpp test_interface.h
+test_annotations_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/tests
+test_annotations_LDADD = $(top_builddir)/src/libdxfrw.la
+test_attributes_SOURCES = test_attributes.cpp test_interface.h
+test_attributes_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/tests
+test_attributes_LDADD = $(top_builddir)/src/libdxfrw.la
 CLEANFILES = test_output.dxf test_binary.dxf test_*.dxf *.dxf
 all: all-am
 
@@ -629,6 +662,14 @@ clean-checkPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+test_annotations$(EXEEXT): $(test_annotations_OBJECTS) $(test_annotations_DEPENDENCIES) $(EXTRA_test_annotations_DEPENDENCIES) 
+	@rm -f test_annotations$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_annotations_OBJECTS) $(test_annotations_LDADD) $(LIBS)
+
+test_attributes$(EXEEXT): $(test_attributes_OBJECTS) $(test_attributes_DEPENDENCIES) $(EXTRA_test_attributes_DEPENDENCIES) 
+	@rm -f test_attributes$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_attributes_OBJECTS) $(test_attributes_LDADD) $(LIBS)
+
 test_basic$(EXEEXT): $(test_basic_OBJECTS) $(test_basic_DEPENDENCIES) $(EXTRA_test_basic_DEPENDENCIES) 
 	@rm -f test_basic$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_basic_OBJECTS) $(test_basic_LDADD) $(LIBS)
@@ -636,6 +677,10 @@ test_basic$(EXEEXT): $(test_basic_OBJECTS) $(test_basic_DEPENDENCIES) $(EXTRA_te
 test_blocks$(EXEEXT): $(test_blocks_OBJECTS) $(test_blocks_DEPENDENCIES) $(EXTRA_test_blocks_DEPENDENCIES) 
 	@rm -f test_blocks$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(test_blocks_OBJECTS) $(test_blocks_LDADD) $(LIBS)
+
+test_dimensions$(EXEEXT): $(test_dimensions_OBJECTS) $(test_dimensions_DEPENDENCIES) $(EXTRA_test_dimensions_DEPENDENCIES) 
+	@rm -f test_dimensions$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(test_dimensions_OBJECTS) $(test_dimensions_LDADD) $(LIBS)
 
 test_entities$(EXEEXT): $(test_entities_OBJECTS) $(test_entities_DEPENDENCIES) $(EXTRA_test_entities_DEPENDENCIES) 
 	@rm -f test_entities$(EXEEXT)
@@ -667,8 +712,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_annotations-test_annotations.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_attributes-test_attributes.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_basic-test_basic.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_blocks-test_blocks.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_dimensions-test_dimensions.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_entities-test_entities.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_errors-test_errors.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_polylines-test_polylines.Po@am__quote@ # am--include-marker
@@ -706,6 +754,34 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
 
+test_annotations-test_annotations.o: test_annotations.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_annotations_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_annotations-test_annotations.o -MD -MP -MF $(DEPDIR)/test_annotations-test_annotations.Tpo -c -o test_annotations-test_annotations.o `test -f 'test_annotations.cpp' || echo '$(srcdir)/'`test_annotations.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_annotations-test_annotations.Tpo $(DEPDIR)/test_annotations-test_annotations.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_annotations.cpp' object='test_annotations-test_annotations.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_annotations_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_annotations-test_annotations.o `test -f 'test_annotations.cpp' || echo '$(srcdir)/'`test_annotations.cpp
+
+test_annotations-test_annotations.obj: test_annotations.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_annotations_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_annotations-test_annotations.obj -MD -MP -MF $(DEPDIR)/test_annotations-test_annotations.Tpo -c -o test_annotations-test_annotations.obj `if test -f 'test_annotations.cpp'; then $(CYGPATH_W) 'test_annotations.cpp'; else $(CYGPATH_W) '$(srcdir)/test_annotations.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_annotations-test_annotations.Tpo $(DEPDIR)/test_annotations-test_annotations.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_annotations.cpp' object='test_annotations-test_annotations.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_annotations_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_annotations-test_annotations.obj `if test -f 'test_annotations.cpp'; then $(CYGPATH_W) 'test_annotations.cpp'; else $(CYGPATH_W) '$(srcdir)/test_annotations.cpp'; fi`
+
+test_attributes-test_attributes.o: test_attributes.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_attributes_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_attributes-test_attributes.o -MD -MP -MF $(DEPDIR)/test_attributes-test_attributes.Tpo -c -o test_attributes-test_attributes.o `test -f 'test_attributes.cpp' || echo '$(srcdir)/'`test_attributes.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_attributes-test_attributes.Tpo $(DEPDIR)/test_attributes-test_attributes.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_attributes.cpp' object='test_attributes-test_attributes.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_attributes_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_attributes-test_attributes.o `test -f 'test_attributes.cpp' || echo '$(srcdir)/'`test_attributes.cpp
+
+test_attributes-test_attributes.obj: test_attributes.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_attributes_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_attributes-test_attributes.obj -MD -MP -MF $(DEPDIR)/test_attributes-test_attributes.Tpo -c -o test_attributes-test_attributes.obj `if test -f 'test_attributes.cpp'; then $(CYGPATH_W) 'test_attributes.cpp'; else $(CYGPATH_W) '$(srcdir)/test_attributes.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_attributes-test_attributes.Tpo $(DEPDIR)/test_attributes-test_attributes.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_attributes.cpp' object='test_attributes-test_attributes.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_attributes_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_attributes-test_attributes.obj `if test -f 'test_attributes.cpp'; then $(CYGPATH_W) 'test_attributes.cpp'; else $(CYGPATH_W) '$(srcdir)/test_attributes.cpp'; fi`
+
 test_basic-test_basic.o: test_basic.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_basic_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_basic-test_basic.o -MD -MP -MF $(DEPDIR)/test_basic-test_basic.Tpo -c -o test_basic-test_basic.o `test -f 'test_basic.cpp' || echo '$(srcdir)/'`test_basic.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_basic-test_basic.Tpo $(DEPDIR)/test_basic-test_basic.Po
@@ -733,6 +809,20 @@ test_blocks-test_blocks.obj: test_blocks.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_blocks.cpp' object='test_blocks-test_blocks.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_blocks_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_blocks-test_blocks.obj `if test -f 'test_blocks.cpp'; then $(CYGPATH_W) 'test_blocks.cpp'; else $(CYGPATH_W) '$(srcdir)/test_blocks.cpp'; fi`
+
+test_dimensions-test_dimensions.o: test_dimensions.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_dimensions_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_dimensions-test_dimensions.o -MD -MP -MF $(DEPDIR)/test_dimensions-test_dimensions.Tpo -c -o test_dimensions-test_dimensions.o `test -f 'test_dimensions.cpp' || echo '$(srcdir)/'`test_dimensions.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_dimensions-test_dimensions.Tpo $(DEPDIR)/test_dimensions-test_dimensions.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_dimensions.cpp' object='test_dimensions-test_dimensions.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_dimensions_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_dimensions-test_dimensions.o `test -f 'test_dimensions.cpp' || echo '$(srcdir)/'`test_dimensions.cpp
+
+test_dimensions-test_dimensions.obj: test_dimensions.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_dimensions_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_dimensions-test_dimensions.obj -MD -MP -MF $(DEPDIR)/test_dimensions-test_dimensions.Tpo -c -o test_dimensions-test_dimensions.obj `if test -f 'test_dimensions.cpp'; then $(CYGPATH_W) 'test_dimensions.cpp'; else $(CYGPATH_W) '$(srcdir)/test_dimensions.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_dimensions-test_dimensions.Tpo $(DEPDIR)/test_dimensions-test_dimensions.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='test_dimensions.cpp' object='test_dimensions-test_dimensions.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_dimensions_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_dimensions-test_dimensions.obj `if test -f 'test_dimensions.cpp'; then $(CYGPATH_W) 'test_dimensions.cpp'; else $(CYGPATH_W) '$(srcdir)/test_dimensions.cpp'; fi`
 
 test_entities-test_entities.o: test_entities.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test_entities_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_entities-test_entities.o -MD -MP -MF $(DEPDIR)/test_entities-test_entities.Tpo -c -o test_entities-test_entities.o `test -f 'test_entities.cpp' || echo '$(srcdir)/'`test_entities.cpp
@@ -1073,6 +1163,27 @@ test_errors.log: test_errors$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_dimensions.log: test_dimensions$(EXEEXT)
+	@p='test_dimensions$(EXEEXT)'; \
+	b='test_dimensions'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_annotations.log: test_annotations$(EXEEXT)
+	@p='test_annotations$(EXEEXT)'; \
+	b='test_annotations'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_attributes.log: test_attributes$(EXEEXT)
+	@p='test_attributes$(EXEEXT)'; \
+	b='test_attributes'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .test.log:
 	@p='$<'; \
 	$(am__set_b); \
@@ -1166,8 +1277,11 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/test_basic-test_basic.Po
+		-rm -f ./$(DEPDIR)/test_annotations-test_annotations.Po
+	-rm -f ./$(DEPDIR)/test_attributes-test_attributes.Po
+	-rm -f ./$(DEPDIR)/test_basic-test_basic.Po
 	-rm -f ./$(DEPDIR)/test_blocks-test_blocks.Po
+	-rm -f ./$(DEPDIR)/test_dimensions-test_dimensions.Po
 	-rm -f ./$(DEPDIR)/test_entities-test_entities.Po
 	-rm -f ./$(DEPDIR)/test_errors-test_errors.Po
 	-rm -f ./$(DEPDIR)/test_polylines-test_polylines.Po
@@ -1219,8 +1333,11 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/test_basic-test_basic.Po
+		-rm -f ./$(DEPDIR)/test_annotations-test_annotations.Po
+	-rm -f ./$(DEPDIR)/test_attributes-test_attributes.Po
+	-rm -f ./$(DEPDIR)/test_basic-test_basic.Po
 	-rm -f ./$(DEPDIR)/test_blocks-test_blocks.Po
+	-rm -f ./$(DEPDIR)/test_dimensions-test_dimensions.Po
 	-rm -f ./$(DEPDIR)/test_entities-test_entities.Po
 	-rm -f ./$(DEPDIR)/test_errors-test_errors.Po
 	-rm -f ./$(DEPDIR)/test_polylines-test_polylines.Po
