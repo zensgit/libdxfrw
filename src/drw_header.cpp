@@ -1761,10 +1761,10 @@ bool DRW_Header::parseDwg(DRW::Version version, dwgBuffer *buf, dwgBuffer *hBbuf
     duint32 bitSize = 0;
     duint32 endBitPos = 160; //start bit: 16 sentinel + 4 size
     DRW_DBG("\nbyte size of data: "); DRW_DBG(size);
-    if (version > DRW::AC1021 && mv > 3) { //2010+
+    if ((version > DRW::AC1021 && mv > 3) || version >= DRW::AC1032) { //2010+ or AC1032
         duint32 hSize = buf->getRawLong32();
         endBitPos += 32; //start bit: + 4 hight size
-        DRW_DBG("\n2010+ & MV> 3, higth 32b: "); DRW_DBG(hSize);
+        DRW_DBG("\n2010+ & MV> 3 or AC1032, higth 32b: "); DRW_DBG(hSize);
     }
 //RLZ TODO add $ACADVER var & $DWGCODEPAGE & $MEASUREMENT
 //RLZ TODO EN 2000 falta $CELWEIGHT, $ENDCAPS, $EXTNAMES $JOINSTYLE $LWDISPLAY $PSTYLEMODE $TDUCREATE  $TDUUPDATE $XEDIT
@@ -2391,7 +2391,7 @@ bool DRW_Header::parseDwg(DRW::Version version, dwgBuffer *buf, dwgBuffer *hBbuf
     }
 
     buf->setPosition(size+16+4); //readed size +16 start sentinel + 4 size
-    if (version > DRW::AC1021 && mv > 3) { //2010+
+    if ((version > DRW::AC1021 && mv > 3) || version >= DRW::AC1032) { //2010+ or AC1032
         buf->getRawLong32();//advance 4 bytes (hisize)
     }
     DRW_DBG("\nseting position to: "); DRW_DBG(buf->getPosition());

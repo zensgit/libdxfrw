@@ -33,7 +33,7 @@ EOF
 
 # Check arguments
 if [ $# -ne 2 ]; then
-    echo "Error: Invalid number of arguments"
+    echo "Error: Invalid number of arguments" >&2
     usage
 fi
 
@@ -42,7 +42,7 @@ OUTPUT_FILE="$2"
 
 # Check if input file exists
 if [ ! -f "$INPUT_FILE" ]; then
-    echo "Error: Input file does not exist: $INPUT_FILE"
+    echo "Error: Input file does not exist: $INPUT_FILE" >&2
     exit 1
 fi
 
@@ -56,19 +56,19 @@ for cmd in python3 python; do
 done
 
 if [ -z "$PYTHON" ]; then
-    echo "Error: Python not found. Please install Python 3."
+    echo "Error: Python not found. Please install Python 3." >&2
     exit 1
 fi
 
 # Check if ezdxf is available
 if ! $PYTHON -c "import ezdxf" 2>/dev/null; then
-    echo "Error: ezdxf package not found. Please install it:"
-    echo "  pip install ezdxf"
+    echo "Error: ezdxf package not found. Please install it:" >&2
+    echo "  pip install ezdxf" >&2
     exit 1
 fi
 
 # Convert DXF to text
 $PYTHON "${SCRIPT_DIR}/dxf2txt.py" "$INPUT_FILE" "$OUTPUT_FILE"
 
-echo "✓ Successfully converted: $OUTPUT_FILE"
+echo "Successfully converted: $OUTPUT_FILE" >&2
 
