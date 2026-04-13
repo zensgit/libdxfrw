@@ -103,6 +103,7 @@ private:
     bool processVertex(DRW_Polyline* pl);
     bool processText();
     bool processMText();
+    bool processAttrib();
     bool processHatch();
     bool processSpline();
     bool process3dface();

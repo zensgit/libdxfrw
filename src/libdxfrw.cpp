@@ -2167,6 +2167,13 @@ bool dxfRW::processEntities(bool isblock) {
             processPolyline();
         } else if (nextentity == "TEXT") {
             processText();
+        } else if (nextentity == "ATTRIB" || nextentity == "ATTDEF") {
+            processAttrib();
+        } else if (nextentity == "SEQEND") {
+            // SEQEND terminates attribute list after INSERT; skip to next entity
+            if (reader->readRec(&code)) {
+                if (code == 0) nextentity = reader->getString();
+            }
         } else if (nextentity == "MTEXT") {
             processMText();
         } else if (nextentity == "HATCH") {
@@ -2547,6 +2554,34 @@ bool dxfRW::processText() {
             iface->addText(txt);
             return true;  //found new entity or ENDSEC, terminate
         }
+        default:
+            txt.parseCode(code, reader);
+            break;
+        }
+    }
+    return true;
+}
+
+// Parse ATTRIB/ATTDEF as TEXT (same DXF structure; code 2 = tag, code 1 = value).
+// Only the displayed text value (code 1) matters for rendering; we route to addText.
+bool dxfRW::processAttrib() {
+    DRW_DBG("dxfRW::processAttrib");
+    int code;
+    DRW_Text txt;
+    while (reader->readRec(&code)) {
+        DRW_DBG(code); DRW_DBG("\n");
+        switch (code) {
+        case 0: {
+            nextentity = reader->getString();
+            DRW_DBG(nextentity); DRW_DBG("\n");
+            if (!txt.text.empty())
+                iface->addText(txt);
+            return true;  //found new entity or ENDSEC, terminate
+        }
+        case 2:
+            // Attribute tag name (group 2); skip — text value is in group 1
+            reader->getString();
+            break;
         default:
             txt.parseCode(code, reader);
             break;
