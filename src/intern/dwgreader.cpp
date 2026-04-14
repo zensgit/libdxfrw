@@ -942,13 +942,14 @@ bool dwgReader::readDwgEntities(DRW_Interface& intfa, dwgBuffer *dbuf){
     DRW_DBG("\nobject map total size= "); DRW_DBG(ObjectMap.size());
     std::map<duint32, objHandle>::iterator itB=ObjectMap.begin();
     std::map<duint32, objHandle>::iterator itE=ObjectMap.end();
-    int maxIter = 500000; // safety limit
+    int maxIter = 500000;
+    int entityCount = 0;
     while (itB != itE && --maxIter > 0){
+        ++entityCount;
         ret2 = readDwgEntity(dbuf, itB->second, intfa);
         ObjectMap.erase(itB);
         itB=ObjectMap.begin();
-        if (ret)
-            ret = ret2;
+        if (ret) ret = ret2;
     }
     return ret;
 }

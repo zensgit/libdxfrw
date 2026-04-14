@@ -233,7 +233,8 @@ bool DRW_Entity::parseDwg(DRW::Version version, dwgBuffer *buf, dwgBuffer* strBu
     DRW_DBG("Entity Handle: "); DRW_DBGHL(ho.code, ho.size, ho.ref);
     dint16 extDataSize = buf->getBitShort(); //BS
     DRW_DBG(" ext data size: "); DRW_DBG(extDataSize);
-    while (extDataSize>0 && buf->isGood()) {
+    int extDataIter = 0;
+    while (extDataSize>0 && buf->isGood() && ++extDataIter < 1000) {
         /* RLZ: TODO */
         dwgHandle ah = buf->getHandle();
         DRW_DBG("App Handle: "); DRW_DBGHL(ah.code, ah.size, ah.ref);

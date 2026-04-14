@@ -251,27 +251,16 @@ bool dwgR::processDwg() {
     bool ret2;
     DRW_Header hdr;
     ret = reader->readDwgHeader(hdr);
-    if (!ret) {
-        error = DRW::BAD_READ_HEADER;
-    }
+    if (!ret) error = DRW::BAD_READ_HEADER;
 
     ret2 = reader->readDwgClasses();
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_CLASSES;
-        ret = ret2;
-    }
+    if (ret && !ret2) { error = DRW::BAD_READ_CLASSES; ret = ret2; }
 
     ret2 = reader->readDwgHandles();
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_HANDLES;
-        ret = ret2;
-    }
+    if (ret && !ret2) { error = DRW::BAD_READ_HANDLES; ret = ret2; }
 
     ret2 = reader->readDwgTables(hdr);
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_TABLES;
-        ret = ret2;
-    }
+    if (ret && !ret2) { error = DRW::BAD_READ_TABLES; ret = ret2; }
 
     iface->addHeader(&hdr);
 
@@ -307,15 +296,10 @@ bool dwgR::processDwg() {
     // Read blocks, entities, and objects — continue on partial failures.
     // Individual entity parse errors should not abort the entire file.
     ret2 = reader->readDwgBlocks(*iface);
-    if (!ret2) {
-        DRW_DBG("Warning: some blocks failed to parse\n");
-        // Don't abort — partial block data is better than nothing
-    }
+    if (!ret2) DRW_DBG("Warning: some blocks failed to parse\n");
 
     ret2 = reader->readDwgEntities(*iface);
-    if (!ret2) {
-        DRW_DBG("Warning: some entities failed to parse\n");
-    }
+    if (!ret2) DRW_DBG("Warning: some entities failed to parse\n");
 
     ret2 = reader->readDwgObjects(*iface);
     if (!ret2) {
