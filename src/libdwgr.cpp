@@ -304,23 +304,23 @@ bool dwgR::processDwg() {
         iface->addAppId(const_cast<DRW_AppId&>(*ly));
     }
 
+    // Read blocks, entities, and objects — continue on partial failures.
+    // Individual entity parse errors should not abort the entire file.
     ret2 = reader->readDwgBlocks(*iface);
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_BLOCKS;
-        ret = ret2;
+    if (!ret2) {
+        DRW_DBG("Warning: some blocks failed to parse\n");
+        // Don't abort — partial block data is better than nothing
     }
 
     ret2 = reader->readDwgEntities(*iface);
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_ENTITIES;
-        ret = ret2;
+    if (!ret2) {
+        DRW_DBG("Warning: some entities failed to parse\n");
     }
 
     ret2 = reader->readDwgObjects(*iface);
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_OBJECTS;
-        ret = ret2;
+    if (!ret2) {
+        DRW_DBG("Warning: some objects failed to parse\n");
     }
 
-    return ret;
+    return ret; // ret is true if header/classes/handles/tables succeeded
 }
