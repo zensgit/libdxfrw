@@ -1870,6 +1870,10 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     solid = buf->getBit();
     associative = buf->getBit();
     loopsnum = buf->getBitLong();
+    if (loopsnum < 0 || loopsnum > 10000) {
+        DRW_DBG("WARNING: loopsnum too large: "); DRW_DBG(loopsnum); DRW_DBG(", aborting hatch\n");
+        return buf->isGood();
+    }
 
     //read loops
     for (dint32 i = 0 ; i < loopsnum; ++i){
@@ -1955,7 +1959,12 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         }//end polyline
         loop->update();
         looplist.push_back(loop);
-        totalBoundItems += buf->getBitLong();
+        duint32 bItems = buf->getBitLong();
+        if (bItems > 100000) {
+            DRW_DBG("WARNING: boundItems too large: "); DRW_DBG(bItems); DRW_DBG(", aborting\n");
+            return buf->isGood();
+        }
+        totalBoundItems += bItems;
         DRW_DBG(" totalBoundItems: "); DRW_DBG(totalBoundItems);
     } //end read loops
 
@@ -2004,6 +2013,10 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         return ret;
     DRW_DBG("Remaining bytes: "); DRW_DBG(buf->numRemainingBytes()); DRW_DBG("\n");
 
+    if (totalBoundItems > 100000) {
+        DRW_DBG("WARNING: totalBoundItems too large: "); DRW_DBG(totalBoundItems); DRW_DBG(", skipping\n");
+        return buf->isGood();
+    }
     for (duint32 i = 0 ; i < totalBoundItems; ++i){
         dwgHandle biH = buf->getHandle();
         DRW_DBG("Boundary Items Handle: "); DRW_DBGHL(biH.code, biH.size, biH.ref);
