@@ -963,6 +963,7 @@ bool dwgReader::readDwgEntity(dwgBuffer *dbuf, objHandle& obj, DRW_Interface& in
     prevEntLink = e.prevEntLink;
 
     nextEntLink = prevEntLink = 0;// set to 0 to skip unimplemented entities
+    try {
         dbuf->setPosition(obj.loc);
         //verify if position is ok:
         if (!dbuf->isGood()){
@@ -970,6 +971,10 @@ bool dwgReader::readDwgEntity(dwgBuffer *dbuf, objHandle& obj, DRW_Interface& in
             return false;
         }
         int size = dbuf->getModularShort();
+        if (size < 0 || size > 0x1000000) { // 16MB sanity limit per entity
+            DRW_DBG(" Warning: readDwgEntity, bad size: "); DRW_DBG(size); DRW_DBG("\n");
+            return false;
+        }
         if (version > DRW::AC1021) {//2010+
             bs = dbuf->getUModularChar();
         }
@@ -1165,6 +1170,13 @@ bool dwgReader::readDwgEntity(dwgBuffer *dbuf, objHandle& obj, DRW_Interface& in
             DRW_DBG("Warning: Entity type "); DRW_DBG(oType);DRW_DBG("has failed, handle: "); DRW_DBG(obj.handle); DRW_DBG("\n");
         }
         delete[]tmpByteStr;
+    } catch (const std::exception& e) {
+        DRW_DBG("Warning: readDwgEntity exception: "); DRW_DBG(e.what()); DRW_DBG(", skipping entity\n");
+        ret = true; // continue reading other entities
+    } catch (...) {
+        DRW_DBG("Warning: readDwgEntity unknown exception, skipping entity\n");
+        ret = true;
+    }
     return ret;
 }
 
