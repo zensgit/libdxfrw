@@ -145,22 +145,30 @@ bool dwgR::read(DRW_Interface *interface_, bool ext){
     applyExt = ext;
     iface = interface_;
 
-//testReader();return false;
-
     std::ifstream filestr;
     isOk = openFile(&filestr);
     if (!isOk)
         return false;
 
-    isOk = reader->readMetaData();
-    if (isOk) {
-        isOk = reader->readFileHeader();
+    try {
+        isOk = reader->readMetaData();
         if (isOk) {
-            isOk = processDwg();
+            isOk = reader->readFileHeader();
+            if (isOk) {
+                isOk = processDwg();
+            } else
+                error = DRW::BAD_READ_FILE_HEADER;
         } else
-            error = DRW::BAD_READ_FILE_HEADER;
-    } else
-        error = DRW::BAD_READ_METADATA;
+            error = DRW::BAD_READ_METADATA;
+    } catch (const std::exception& e) {
+        DRW_DBG("DWG read exception: "); DRW_DBG(e.what()); DRW_DBG("\n");
+        error = DRW::BAD_READ_FILE_HEADER;
+        isOk = false;
+    } catch (...) {
+        DRW_DBG("DWG read: unknown exception\n");
+        error = DRW::BAD_UNKNOWN;
+        isOk = false;
+    }
 
     filestr.close();
     if (reader != NULL) {

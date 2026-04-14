@@ -154,8 +154,8 @@ void dwgCompressor::decompress18(duint8 *cbuf, duint8 *dbuf, duint32 csize, duin
     pos=0; //current position in compresed buffer
     rpos=0; //current position in resulting decompresed buffer
     litCount = litLength18();
-    //copy first lileral lenght
-    for (duint32 i=0; i < litCount; ++i) {
+    //copy first literal length — with bounds checking
+    for (duint32 i=0; i < litCount && rpos < sizeD && pos < sizeC; ++i) {
         bufD[rpos++] = bufC[pos++];
     }
 
@@ -199,18 +199,23 @@ void dwgCompressor::decompress18(duint8 *cbuf, duint8 *dbuf, duint32 csize, duin
             DRW_DBG(pos);DRW_DBG(", Dpos: ");DRW_DBG(rpos);DRW_DBG("\n");
             return; //fails, not valid
         }
-        //copy "compresed data", TODO Needed verify out of bounds
-        duint32 remaining = sizeD - (litCount+rpos);
-        if (remaining < compBytes){
-            compBytes = remaining;
-            DRW_DBG("WARNING dwgCompressor::decompress, bad compBytes size, Cpos: ");
-            DRW_DBG(pos);DRW_DBG(", Dpos: ");DRW_DBG(rpos);DRW_DBG("\n");
+        //copy "compressed data" — with full bounds checking
+        if (rpos + litCount > sizeD || compBytes > sizeD) {
+            DRW_DBG("WARNING decompress: output overflow, aborting\n");
+            return;
         }
-        for (duint32 i=0, j= rpos - compOffset -1; i < compBytes; i++) {
+        if (compOffset + 1 > rpos) {
+            DRW_DBG("WARNING decompress: back-reference underflow, aborting\n");
+            return;
+        }
+        duint32 remaining = sizeD - rpos;
+        if (compBytes > remaining)
+            compBytes = remaining;
+        for (duint32 i=0, j= rpos - compOffset -1; i < compBytes && rpos < sizeD; i++) {
             bufD[rpos++] = bufD[j++];
         }
-        //copy "uncompresed data", TODO Needed verify out of bounds
-        for (duint32 i=0; i < litCount; i++) {
+        //copy "uncompressed data" — with bounds checking
+        for (duint32 i=0; i < litCount && rpos < sizeD && pos < sizeC; i++) {
             bufD[rpos++] = bufC[pos++];
         }
     }

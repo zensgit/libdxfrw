@@ -428,7 +428,9 @@ void DRW_LType::parseCode(int code, dxfReader *reader){
         break;
     case 73:
         size = reader->getInt32();
-        path.reserve(size);
+        if (size > 0 && size < 10000000)
+
+            path.reserve(size);
         break;
     case 40:
         length = reader->getDouble();
@@ -702,7 +704,9 @@ bool DRW_Block_Record::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs
     DRW_DBG("flags: "); DRW_DBG(flags); DRW_DBG(", ");
     if (version > DRW::AC1015) {//2004+ fails in 2007
         objectCount = buf->getBitLong(); //Number of objects owned by this block
-        entMap.reserve(objectCount);
+        if (objectCount > 0 && objectCount < 10000000)
+
+            entMap.reserve(objectCount);
     }
     basePoint.x = buf->getBitDouble();
     basePoint.y = buf->getBitDouble();

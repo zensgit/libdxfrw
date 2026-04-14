@@ -1165,7 +1165,10 @@ void DRW_LWPolyline::parseCode(int code, dxfReader *reader){
         break;
     case 90:
         vertexnum = reader->getInt32();
-        vertlist.reserve(vertexnum);
+        if (vertexnum > 0 && vertexnum < 10000000) // sanity limit
+            if (vertexnum > 0 && vertexnum < 10000000)
+
+                vertlist.reserve(vertexnum);
         break;
     case 210:
         haveExtrusion = true;
@@ -1200,7 +1203,9 @@ bool DRW_LWPolyline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     if (flags & 1)
         extPoint = buf->getExtrusion(false);
     vertexnum = buf->getBitLong();
-    vertlist.reserve(vertexnum);
+    if (vertexnum > 0 && vertexnum < 10000000)
+
+        vertlist.reserve(vertexnum);
     unsigned int bulgesnum = 0;
     if (flags & 16)
         bulgesnum = buf->getBitLong();
@@ -1786,7 +1791,9 @@ void DRW_Hatch::parseCode(int code, dxfReader *reader){
         break;
     case 91:
         loopsnum = reader->getInt32();
-        looplist.reserve(loopsnum);
+        if (loopsnum > 0 && loopsnum < 10000000)
+
+            looplist.reserve(loopsnum);
         break;
     case 92:
         loop = new DRW_HatchLoop(reader->getInt32());
@@ -2145,11 +2152,16 @@ bool DRW_Spline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         return false; //RLZ: from doc only 1 or 2 are ok ?
     }
 
-    knotslist.reserve(nknots);
+    if (nknots > 0 && nknots < 10000000)
+
+
+        knotslist.reserve(nknots);
     for (dint32 i= 0; i<nknots; ++i){
         knotslist.push_back (buf->getBitDouble());
     }
-    controllist.reserve(ncontrol);
+    if (ncontrol > 0 && ncontrol < 10000000)
+
+        controllist.reserve(ncontrol);
     for (dint32 i= 0; i<ncontrol; ++i){
         DRW_Coord* crd = new DRW_Coord(buf->get3BitDouble());
         controllist.push_back(crd);
@@ -2157,7 +2169,9 @@ bool DRW_Spline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
             DRW_DBG("\n w: "); DRW_DBG(buf->getBitDouble()); //RLZ Warning: D (BD or RD)
         }
     }
-    fitlist.reserve(nfit);
+    if (nfit > 0 && nfit < 10000000)
+
+        fitlist.reserve(nfit);
     for (dint32 i= 0; i<nfit; ++i){
         DRW_Coord* crd = new DRW_Coord(buf->get3BitDouble());
         fitlist.push_back (crd);
