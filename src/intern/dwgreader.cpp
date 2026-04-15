@@ -722,7 +722,10 @@ bool dwgReader::readDwgTables(DRW_Header& hdr, dwgBuffer *dbuf) {
         }
     }
 
-    return ret;
+    // Don't abort on partial table failures — return true to allow
+    // entity reading to continue. Layer/linetype/style tables may be
+    // partially parsed, which is better than failing the entire file.
+    return true;
 }
 
 bool dwgReader::readDwgBlocks(DRW_Interface& intfa, dwgBuffer *dbuf){
