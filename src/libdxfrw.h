@@ -104,6 +104,7 @@ private:
     bool processText();
     bool processMText();
     bool processAttrib();
+    bool processProxyEntity(); // ACAD_PROXY_ENTITY: decode cached proxy graphics
     bool processHatch();
     bool processSpline();
     bool process3dface();

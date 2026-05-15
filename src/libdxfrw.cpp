@@ -16,6 +16,10 @@
 #include <algorithm>
 #include <sstream>
 #include <cassert>
+#include <cmath>
+#include <cstring>
+#include <cstdint>
+#include <vector>
 #include "intern/drw_textcodec.h"
 #include "intern/dxfreader.h"
 #include "intern/dxfwriter.h"
@@ -2176,6 +2180,8 @@ bool dxfRW::processEntities(bool isblock) {
             }
         } else if (nextentity == "MTEXT") {
             processMText();
+        } else if (nextentity == "ACAD_PROXY_ENTITY") {
+            processProxyEntity();
         } else if (nextentity == "HATCH") {
             processHatch();
         } else if (nextentity == "SPLINE") {
@@ -2608,6 +2614,170 @@ bool dxfRW::processMText() {
             txt.parseCode(code, reader);
             break;
         }
+    }
+    return true;
+}
+
+// ─── ACAD_PROXY_ENTITY proxy-graphics decoding ──────────────────────────────
+// AutoCAD proprietary entities embed a standard "proxy entity graphics" vector
+// cache (DXF code 92/160 = byte size, 310 = hex binary chunks) so non-AutoCAD
+// viewers can still render them. We decode the small opcode subset AutoCAD
+// emits for serial-number balloons / leaders (CIRCLE, POLYLINE,
+// ATTRIBUTE_COLOR, UNICODE_TEXT2) and feed the result through the normal
+// DRW_Interface callbacks. ASCII DXF only; DWG / binary DXF unchanged (TODO).
+namespace {
+
+struct PgCursor {
+    const unsigned char* p;
+    size_t len;
+    size_t pos;
+    explicit PgCursor(const std::vector<unsigned char>& b)
+        : p(b.empty() ? nullptr : b.data()), len(b.size()), pos(0) {}
+    bool ok(size_t need) const { return pos + need <= len; }
+    void align4() { pos = (pos + 3u) & ~size_t(3); } // record sizes are mult-of-4
+    uint32_t u32() { uint32_t v = 0; if (ok(4)) std::memcpy(&v, p + pos, 4); pos += 4; return v; }
+    int32_t  i32() { int32_t  v = 0; if (ok(4)) std::memcpy(&v, p + pos, 4); pos += 4; return v; }
+    double   f64() { double   v = 0; if (ok(8)) std::memcpy(&v, p + pos, 8); pos += 8; return v; }
+};
+
+inline int pgHexVal(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
+
+std::string pgUtf16leToUtf8(const unsigned char* d, size_t nbytes) {
+    std::string out;
+    for (size_t i = 0; i + 1 < nbytes; i += 2) {
+        unsigned cp = static_cast<unsigned>(d[i]) | (static_cast<unsigned>(d[i + 1]) << 8);
+        if (cp == 0) break;
+        if (cp < 0x80) {
+            out += static_cast<char>(cp);
+        } else if (cp < 0x800) {
+            out += static_cast<char>(0xC0 | (cp >> 6));
+            out += static_cast<char>(0x80 | (cp & 0x3F));
+        } else {
+            out += static_cast<char>(0xE0 | (cp >> 12));
+            out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+            out += static_cast<char>(0x80 | (cp & 0x3F));
+        }
+    }
+    return out;
+}
+
+} // namespace
+
+bool dxfRW::processProxyEntity() {
+    DRW_DBG("dxfRW::processProxyEntity\n");
+    int code;
+    std::string layer = "0";
+    int entColor = -1;     // entity code 62 (BYLAYER if absent)
+    long gfxSize = -1;     // code 92 / 160 (graphics byte count)
+    std::string gfxHex;    // concatenated code 310 graphics chunks
+    bool gfxDone = false;
+
+    while (reader->readRec(&code)) {
+        if (code == 0) { nextentity = reader->getString(); break; }
+        switch (code) {
+        case 8:  layer = reader->getUtf8String(); break;
+        case 62: entColor = reader->getInt32(); break;
+        case 92:
+        case 160:
+            if (gfxSize < 0) gfxSize = reader->getInt32();
+            break;
+        case 310:
+            // First 310 stream (until code-92/160 bytes) is the graphics;
+            // a later 310 belongs to proxy entity *data* — ignore it.
+            if (!gfxDone) {
+                gfxHex += reader->getString();
+                if (gfxSize >= 0 && static_cast<long>(gfxHex.size() / 2) >= gfxSize)
+                    gfxDone = true;
+            }
+            break;
+        default:
+            break; // 311/161/162/330/340/94…: entity data / object ids — ignore
+        }
+    }
+
+    std::vector<unsigned char> blob;
+    blob.reserve(gfxHex.size() / 2);
+    for (size_t i = 0; i + 1 < gfxHex.size(); i += 2) {
+        int hi = pgHexVal(gfxHex[i]), lo = pgHexVal(gfxHex[i + 1]);
+        if (hi < 0 || lo < 0) break;
+        blob.push_back(static_cast<unsigned char>((hi << 4) | lo));
+    }
+    if (blob.size() < 12) return true; // nothing usable
+
+    PgCursor c(blob);
+    c.pos = 8; // skip 8-byte proxy-graphics header
+    int curColor = entColor;
+    const double PG_PI = 3.14159265358979323846;
+    while (c.pos + 8 <= c.len) {
+        size_t recStart = c.pos;
+        uint32_t size = c.u32();
+        uint32_t type = c.u32();
+        if (size < 8 || recStart + size > c.len) break;
+        size_t dataEnd = recStart + size;
+        switch (type) {
+        case 14: { // ATTRIBUTE_COLOR
+            uint32_t col = c.u32();
+            curColor = (col == 0 || col > 256) ? -1 : static_cast<int>(col);
+            break;
+        }
+        case 2: { // CIRCLE: center(3d) radius(d) normal(3d)
+            DRW_Circle ci;
+            ci.basePoint.x = c.f64(); ci.basePoint.y = c.f64(); ci.basePoint.z = c.f64();
+            ci.radious = c.f64();
+            ci.layer = layer;
+            if (curColor > 0) ci.color = curColor;
+            iface->addCircle(ci);
+            break;
+        }
+        case 6: { // POLYLINE: count(u32, align4) then count*(3d)
+            uint32_t n = c.u32();
+            c.align4();
+            std::vector<DRW_Coord> v;
+            v.reserve(n);
+            for (uint32_t i = 0; i < n && c.ok(24); ++i) {
+                double x = c.f64(), y = c.f64(), z = c.f64();
+                v.push_back(DRW_Coord(x, y, z));
+            }
+            for (size_t i = 0; i + 1 < v.size(); ++i) {
+                DRW_Line ln;
+                ln.basePoint = v[i];
+                ln.secPoint  = v[i + 1];
+                ln.layer = layer;
+                if (curColor > 0) ln.color = curColor;
+                iface->addLine(ln);
+            }
+            break;
+        }
+        case 38: { // UNICODE_TEXT2
+            double sx = c.f64(), sy = c.f64(), sz = c.f64(); // start point
+            c.f64(); c.f64(); c.f64();                        // normal
+            double dx = c.f64(), dy = c.f64(); c.f64();       // text direction
+            size_t s0 = c.pos, e = s0;
+            while (e + 1 < c.len && !(blob[e] == 0 && blob[e + 1] == 0)) e += 2;
+            std::string txt = (s0 < c.len) ? pgUtf16leToUtf8(&blob[s0], e - s0) : std::string();
+            c.pos = e + 2; c.align4();
+            c.i32(); c.i32();              // ignore length / raw
+            double height = c.f64();       // first of 4 doubles
+            DRW_Text tx;
+            tx.basePoint.x = sx; tx.basePoint.y = sy; tx.basePoint.z = sz;
+            tx.secPoint = tx.basePoint;
+            tx.height = height;
+            tx.text = txt;
+            tx.angle = std::atan2(dy, dx) * 180.0 / PG_PI; // DRW_Text.angle = degrees
+            tx.layer = layer;
+            if (curColor > 0) tx.color = curColor;
+            iface->addText(tx);
+            break;
+        }
+        default:
+            break; // unsupported opcode: skip via record size
+        }
+        c.pos = dataEnd; // always advance exactly by record size
     }
     return true;
 }
