@@ -991,6 +991,8 @@ private:
         ellipse = NULL;
         spline = NULL;
         plvert = NULL;
+        spctrl = NULL;
+        spfit = NULL;
     }
 
     void addLine() {
@@ -1034,6 +1036,8 @@ private:
     DRW_LWPolyline *pline;
     DRW_Point *pt;
     DRW_Vertex2D *plvert;
+    DRW_Coord *spctrl;        // current spline control point being filled
+    DRW_Coord *spfit;         // current spline fit point being filled
     bool ispol;
 };
 

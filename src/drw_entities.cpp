@@ -1755,22 +1755,47 @@ void DRW_Hatch::parseCode(int code, dxfReader *reader){
             plvert = pline->addVertex();
             plvert->x = reader->getDouble();
         }
+        else if (spline) {
+            spctrl = new DRW_Coord;
+            spline->controllist.push_back(spctrl);
+            spctrl->x = reader->getDouble();
+        }
         break;
     case 20:
         if (pt) pt->basePoint.y = reader->getDouble();
         else if (plvert) plvert ->y = reader->getDouble();
+        else if (spctrl) spctrl->y = reader->getDouble();
         break;
     case 11:
         if (line) line->secPoint.x = reader->getDouble();
         else if (ellipse) ellipse->secPoint.x = reader->getDouble();
+        else if (spline) {
+            spfit = new DRW_Coord;
+            spline->fitlist.push_back(spfit);
+            spfit->x = reader->getDouble();
+        }
         break;
     case 21:
         if (line) line->secPoint.y = reader->getDouble();
         else if (ellipse) ellipse->secPoint.y = reader->getDouble();
+        else if (spfit) spfit->y = reader->getDouble();
         break;
     case 40:
         if (arc) arc->radious = reader->getDouble();
         else if (ellipse) ellipse->ratio = reader->getDouble();
+        else if (spline) spline->knotslist.push_back(reader->getDouble());
+        break;
+    case 94:
+        if (spline) spline->degree = reader->getInt32();
+        break;
+    case 95:
+        if (spline) spline->nknots = reader->getInt32();
+        break;
+    case 96:
+        if (spline) spline->ncontrol = reader->getInt32();
+        break;
+    case 97:
+        if (spline) spline->nfit = reader->getInt32();
         break;
     case 41:
         scale = reader->getDouble();
