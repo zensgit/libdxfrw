@@ -724,6 +724,7 @@ public:
         alignV = (VAlign)TopLeft;
         textgen = 1;
         haveXAxis = false;    //if true needed to recalculate angle
+        haveEmbeddedObject = false;
     }
 
 protected:
@@ -735,6 +736,7 @@ public:
     double interlin;     /*!< width factor, code 44 */
 private:
     bool haveXAxis;
+    bool haveEmbeddedObject;  // set on group 101; gates out trailer codes
 };
 
 //! Class to handle vertex

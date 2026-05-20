@@ -1419,6 +1419,17 @@ bool DRW_Text::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
 }
 
 void DRW_MText::parseCode(int code, dxfReader *reader){
+    // DXF code 101 = "Embedded Object" marker (AutoCAD 2018+). Codes after
+    // this belong to a sub-object that re-uses 10/11/40/41/44/etc with
+    // unrelated semantics — without this guard, the embedded object's
+    // group 40 silently overwrote the parent MTEXT's char height (giving
+    // text 14–18× too large), and 44 overwrote line-spacing. Once we see
+    // 101, stop parsing fields for this MTEXT.
+    if (code == 101) {
+        haveEmbeddedObject = true;
+        return;
+    }
+    if (haveEmbeddedObject) return;
     switch (code) {
     case 1:
         text += reader->getString();
