@@ -79,6 +79,10 @@ void dwgReader18::parseSysPage(duint8 *decompSec, duint32 decompSize){
         hdrData[i]=0;
     duint32 calcsH = checksum(0, hdrData, 20);
     DRW_DBG("Calc hdr checksum= "); DRW_DBGH(calcsH);
+    if (compSize > 0x1000000) { // 16MB sanity limit
+        DRW_DBG("ERROR: compSize too large: "); DRW_DBG(compSize); DRW_DBG("\n");
+        return;
+    }
     duint8 *tmpCompSec = new duint8[compSize];
     fileBuf->getBytes(tmpCompSec, compSize);
     duint32 calcsD = checksum(calcsH, tmpCompSec, compSize);
@@ -107,7 +111,12 @@ void dwgReader18::parseSysPage(duint8 *decompSec, duint32 decompSize){
  //called ???: Section map: 0x4163003b
 bool dwgReader18::parseDataPage(dwgSectionInfo si/*, duint8 *dData*/){
     DRW_DBG("\nparseDataPage\n ");
-    objData = new duint8 [si.pageCount * si.maxSize];
+    duint64 totalSize = (duint64)si.pageCount * si.maxSize;
+    if (totalSize > 0x10000000) { // 256MB sanity limit
+        DRW_DBG("ERROR: section too large: "); DRW_DBG((duint32)totalSize); DRW_DBG("\n");
+        return false;
+    }
+    objData = new duint8 [totalSize];
 
     for (std::map<duint32, dwgPageInfo>::iterator it=si.pages.begin(); it!=si.pages.end(); ++it){
         dwgPageInfo pi = it->second;
@@ -296,6 +305,10 @@ bool dwgReader18::readFileHeader() {
     DRW_DBG("\nSection page type= "); DRW_DBGH(pageType);
     duint32 decompSize = fileBuf->getRawLong32();
     DRW_DBG("\nDecompressed size= "); DRW_DBG(decompSize); DRW_DBG(", "); DRW_DBGH(decompSize);
+    if (decompSize > 0x1000000) { // 16MB sanity limit
+        DRW_DBG("\nERROR: decompSize too large\n");
+        return false;
+    }
     if (pageType != 0x41630e3b){
         //bad page type, ends
         DRW_DBG("Warning, bad page type, was expected 0x41630e3b instead of");  DRW_DBGH(pageType); DRW_DBG("\n");
@@ -339,6 +352,10 @@ bool dwgReader18::readFileHeader() {
     DRW_DBG("\nSection page type= "); DRW_DBGH(pageType);
     decompSize = fileBuf->getRawLong32();
     DRW_DBG("\nDecompressed size= "); DRW_DBG(decompSize); DRW_DBG(", "); DRW_DBGH(decompSize);
+    if (decompSize > 0x1000000) {
+        DRW_DBG("\nERROR: section map decompSize too large\n");
+        return false;
+    }
     if (pageType != 0x4163003b){
         //bad page type, ends
         DRW_DBG("Warning, bad page type, was expected 0x4163003b instead of");  DRW_DBGH(pageType); DRW_DBG("\n");

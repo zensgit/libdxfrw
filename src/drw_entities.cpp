@@ -233,7 +233,8 @@ bool DRW_Entity::parseDwg(DRW::Version version, dwgBuffer *buf, dwgBuffer* strBu
     DRW_DBG("Entity Handle: "); DRW_DBGHL(ho.code, ho.size, ho.ref);
     dint16 extDataSize = buf->getBitShort(); //BS
     DRW_DBG(" ext data size: "); DRW_DBG(extDataSize);
-    while (extDataSize>0 && buf->isGood()) {
+    int extDataIter = 0;
+    while (extDataSize>0 && buf->isGood() && ++extDataIter < 1000) {
         /* RLZ: TODO */
         dwgHandle ah = buf->getHandle();
         DRW_DBG("App Handle: "); DRW_DBGHL(ah.code, ah.size, ah.ref);
@@ -1165,7 +1166,10 @@ void DRW_LWPolyline::parseCode(int code, dxfReader *reader){
         break;
     case 90:
         vertexnum = reader->getInt32();
-        vertlist.reserve(vertexnum);
+        if (vertexnum > 0 && vertexnum < 10000000) // sanity limit
+            if (vertexnum > 0 && vertexnum < 10000000)
+
+                vertlist.reserve(vertexnum);
         break;
     case 210:
         haveExtrusion = true;
@@ -1200,7 +1204,9 @@ bool DRW_LWPolyline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     if (flags & 1)
         extPoint = buf->getExtrusion(false);
     vertexnum = buf->getBitLong();
-    vertlist.reserve(vertexnum);
+    if (vertexnum > 0 && vertexnum < 10000000)
+
+        vertlist.reserve(vertexnum);
     unsigned int bulgesnum = 0;
     if (flags & 16)
         bulgesnum = buf->getBitLong();
@@ -1221,6 +1227,9 @@ bool DRW_LWPolyline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     flags &= 129;
     DRW_DBG("end flags value: "); DRW_DBG(flags);
 
+    if (vertexnum > 1000000) vertexnum = 0; // corrupt data protection
+    if (bulgesnum > 1000000) bulgesnum = 0;
+    if (widthsnum > 1000000) widthsnum = 0;
     if (vertexnum > 0) { //verify if is lwpol without vertex (empty)
         // add vertexs
         vertex = new DRW_Vertex2D();
@@ -1249,12 +1258,10 @@ bool DRW_LWPolyline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         }
         //add vertexId
         if (version > DRW::AC1021) {//2010+
+            if (vertexIdCount < 0 || vertexIdCount > 1000000) vertexIdCount = 0;
             for (int i = 0; i < vertexIdCount; i++){
                 dint32 vertexId = buf->getBitLong();
-                //TODO implement vertexId, do not exist in dxf
                 DRW_UNUSED(vertexId);
-//                if (vertlist.size()< i)
-//                    vertlist.at(i)->vertexId = vertexId;
             }
         }
         //add widths
@@ -1412,6 +1419,17 @@ bool DRW_Text::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
 }
 
 void DRW_MText::parseCode(int code, dxfReader *reader){
+    // DXF code 101 = "Embedded Object" marker (AutoCAD 2018+). Codes after
+    // this belong to a sub-object that re-uses 10/11/40/41/44/etc with
+    // unrelated semantics — without this guard, the embedded object's
+    // group 40 silently overwrote the parent MTEXT's char height (giving
+    // text 14–18× too large), and 44 overwrote line-spacing. Once we see
+    // 101, stop parsing fields for this MTEXT.
+    if (code == 101) {
+        haveEmbeddedObject = true;
+        return;
+    }
+    if (haveEmbeddedObject) return;
     switch (code) {
     case 1:
         text += reader->getString();
@@ -1591,7 +1609,10 @@ bool DRW_Polyline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     }
     if (version > DRW::AC1015){ //2004+
         ooCount = buf->getBitLong();
+        if (ooCount < 0 || ooCount > 1000000) ooCount = 0;
     }
+    if (vertexcount < 0 || vertexcount > 1000000) vertexcount = 0;
+    if (facecount < 0 || facecount > 1000000) facecount = 0;
 
     ret = DRW_Entity::parseDwgEntHandle(version, buf);
     if (!ret)
@@ -1734,22 +1755,47 @@ void DRW_Hatch::parseCode(int code, dxfReader *reader){
             plvert = pline->addVertex();
             plvert->x = reader->getDouble();
         }
+        else if (spline) {
+            spctrl = new DRW_Coord;
+            spline->controllist.push_back(spctrl);
+            spctrl->x = reader->getDouble();
+        }
         break;
     case 20:
         if (pt) pt->basePoint.y = reader->getDouble();
         else if (plvert) plvert ->y = reader->getDouble();
+        else if (spctrl) spctrl->y = reader->getDouble();
         break;
     case 11:
         if (line) line->secPoint.x = reader->getDouble();
         else if (ellipse) ellipse->secPoint.x = reader->getDouble();
+        else if (spline) {
+            spfit = new DRW_Coord;
+            spline->fitlist.push_back(spfit);
+            spfit->x = reader->getDouble();
+        }
         break;
     case 21:
         if (line) line->secPoint.y = reader->getDouble();
         else if (ellipse) ellipse->secPoint.y = reader->getDouble();
+        else if (spfit) spfit->y = reader->getDouble();
         break;
     case 40:
         if (arc) arc->radious = reader->getDouble();
         else if (ellipse) ellipse->ratio = reader->getDouble();
+        else if (spline) spline->knotslist.push_back(reader->getDouble());
+        break;
+    case 94:
+        if (spline) spline->degree = reader->getInt32();
+        break;
+    case 95:
+        if (spline) spline->nknots = reader->getInt32();
+        break;
+    case 96:
+        if (spline) spline->ncontrol = reader->getInt32();
+        break;
+    case 97:
+        if (spline) spline->nfit = reader->getInt32();
         break;
     case 41:
         scale = reader->getDouble();
@@ -1786,7 +1832,9 @@ void DRW_Hatch::parseCode(int code, dxfReader *reader){
         break;
     case 91:
         loopsnum = reader->getInt32();
-        looplist.reserve(loopsnum);
+        if (loopsnum > 0 && loopsnum < 10000000)
+
+            looplist.reserve(loopsnum);
         break;
     case 92:
         loop = new DRW_HatchLoop(reader->getInt32());
@@ -1840,6 +1888,7 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         double gradTint = buf->getBitDouble();
         DRW_DBG(" Gradient tint: "); DRW_DBG(gradTint);
         dint32 numCol = buf->getBitLong();
+        if (numCol < 0 || numCol > 10000) numCol = 0;
         DRW_DBG(" num colors: "); DRW_DBG(numCol);
         for (dint32 i = 0 ; i < numCol; ++i){
             double unkDouble = buf->getBitDouble();
@@ -1863,6 +1912,10 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
     solid = buf->getBit();
     associative = buf->getBit();
     loopsnum = buf->getBitLong();
+    if (loopsnum < 0 || loopsnum > 10000) {
+        DRW_DBG("WARNING: loopsnum too large: "); DRW_DBG(loopsnum); DRW_DBG(", skipping hatch\n");
+        return true;
+    }
 
     //read loops
     for (dint32 i = 0 ; i < loopsnum; ++i){
@@ -1870,6 +1923,7 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         havePixelSize |= loop->type & 4;
         if (!(loop->type & 2)){ //Not polyline
             dint32 numPathSeg = buf->getBitLong();
+            if (numPathSeg < 0 || numPathSeg > 100000) numPathSeg = 0;
             for (dint32 j = 0; j<numPathSeg;++j){
                 duint8 typePath = buf->getRawChar8();
                 if (typePath == 1){ //line
@@ -1905,21 +1959,23 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
                     // > numctlpts BL 96 number of control points
                     spline->nknots = buf->getBitLong();
                     spline->ncontrol = buf->getBitLong();
+                    if (spline->nknots < 0 || spline->nknots > 1000000) spline->nknots = 0;
+                    if (spline->ncontrol < 0 || spline->ncontrol > 1000000) spline->ncontrol = 0;
                     spline->knotslist.reserve(spline->nknots);
                     spline->controllist.reserve(spline->ncontrol);
                     for (dint32 j = 0; j < spline->nknots;++j){
                         spline->knotslist.push_back (buf->getBitDouble());
                     }
                     for (dint32 j = 0; j < spline->ncontrol;++j){
-                        // pt0 2RD 10 control point
                         DRW_Coord* crd = new DRW_Coord(buf->get2RawDouble());
                         spline->controllist.push_back(crd);
                         if(isRational)
-                            crd->z =  buf->getBitDouble(); //RLZ: investigate how store weight
+                            crd->z =  buf->getBitDouble();
                         spline->controllist.push_back(crd);
                     }
                     if (version > DRW::AC1021) { //2010+
                         spline->nfit = buf->getBitLong();
+                        if (spline->nfit < 0 || spline->nfit > 1000000) spline->nfit = 0;
                         spline->fitlist.reserve(spline->nfit);
                         for (dint32 j = 0; j < spline->nfit;++j){
                             // Fitpoint 2RD 11
@@ -1936,6 +1992,7 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
             bool asBulge = buf->getBit();
             pline->flags = buf->getBit();//closed bit
             dint32 numVert = buf->getBitLong();
+            if (numVert < 0 || numVert > 100000) numVert = 0;
             for (dint32 j = 0; j<numVert;++j){
                 DRW_Vertex2D v;
                 v.x = buf->getRawDouble();
@@ -1948,7 +2005,12 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         }//end polyline
         loop->update();
         looplist.push_back(loop);
-        totalBoundItems += buf->getBitLong();
+        duint32 bItems = buf->getBitLong();
+        if (bItems > 100000) {
+            DRW_DBG("WARNING: boundItems too large: "); DRW_DBG(bItems); DRW_DBG(", skipping hatch\n");
+            return true; // skip this hatch but don't abort the file
+        }
+        totalBoundItems += bItems;
         DRW_DBG(" totalBoundItems: "); DRW_DBG(totalBoundItems);
     } //end read loops
 
@@ -1997,6 +2059,10 @@ bool DRW_Hatch::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         return ret;
     DRW_DBG("Remaining bytes: "); DRW_DBG(buf->numRemainingBytes()); DRW_DBG("\n");
 
+    if (totalBoundItems > 100000) {
+        DRW_DBG("WARNING: totalBoundItems too large: "); DRW_DBG(totalBoundItems); DRW_DBG(", skipping\n");
+        return true;
+    }
     for (duint32 i = 0 ; i < totalBoundItems; ++i){
         dwgHandle biH = buf->getHandle();
         DRW_DBG("Boundary Items Handle: "); DRW_DBGHL(biH.code, biH.size, biH.ref);
@@ -2145,6 +2211,9 @@ bool DRW_Spline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
         return false; //RLZ: from doc only 1 or 2 are ok ?
     }
 
+    // Clamp to sanity limits to prevent infinite loops from corrupt data
+    if (nknots < 0 || nknots > 1000000) nknots = 0;
+    if (ncontrol < 0 || ncontrol > 1000000) ncontrol = 0;
     knotslist.reserve(nknots);
     for (dint32 i= 0; i<nknots; ++i){
         knotslist.push_back (buf->getBitDouble());
@@ -2157,6 +2226,7 @@ bool DRW_Spline::parseDwg(DRW::Version version, dwgBuffer *buf, duint32 bs){
             DRW_DBG("\n w: "); DRW_DBG(buf->getBitDouble()); //RLZ Warning: D (BD or RD)
         }
     }
+    if (nfit < 0 || nfit > 1000000) nfit = 0;
     fitlist.reserve(nfit);
     for (dint32 i= 0; i<nfit; ++i){
         DRW_Coord* crd = new DRW_Coord(buf->get3BitDouble());

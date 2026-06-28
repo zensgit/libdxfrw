@@ -80,6 +80,8 @@ namespace DRW {
         VIEWPORT,
 //        WIPEOUT, //WIPEOUTVARIABLE
         XLINE,
+        ATTRIB,
+        ATTDEF,
         UNKNOWN
     };
 
@@ -691,6 +693,7 @@ public:
     double widthscale;         /*!< width factor, code 41 */
     double oblique;            /*!< oblique angle, code 51 */
     UTF8STRING style;          /*!< style name, code 7 */
+    UTF8STRING attributeTag;   /*!< ATTRIB/ATTDEF tag name, code 2 */
     int textgen;               /*!< text generation, code 71 */
     enum HAlign alignH;        /*!< horizontal align, code 72 */
     enum VAlign alignV;        /*!< vertical align, code 73 */
@@ -724,6 +727,7 @@ public:
         alignV = (VAlign)TopLeft;
         textgen = 1;
         haveXAxis = false;    //if true needed to recalculate angle
+        haveEmbeddedObject = false;
     }
 
 protected:
@@ -735,6 +739,7 @@ public:
     double interlin;     /*!< width factor, code 44 */
 private:
     bool haveXAxis;
+    bool haveEmbeddedObject;  // set on group 101; gates out trailer codes
 };
 
 //! Class to handle vertex
@@ -989,6 +994,8 @@ private:
         ellipse = NULL;
         spline = NULL;
         plvert = NULL;
+        spctrl = NULL;
+        spfit = NULL;
     }
 
     void addLine() {
@@ -1032,6 +1039,8 @@ private:
     DRW_LWPolyline *pline;
     DRW_Point *pt;
     DRW_Vertex2D *plvert;
+    DRW_Coord *spctrl;        // current spline control point being filled
+    DRW_Coord *spfit;         // current spline fit point being filled
     bool ispol;
 };
 
@@ -1512,4 +1521,3 @@ private:
 #endif
 
 // EOF
-

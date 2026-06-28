@@ -132,7 +132,8 @@ bool dwgReader::readDwgHandles(dwgBuffer *dbuf, duint32 offset, duint32 size) {
 
     int startPos = offset;
 
-    while (maxPos > dbuf->getPosition()) {
+    int handleIter = 0;
+    while (maxPos > dbuf->getPosition() && ++handleIter < 500000) {
         DRW_DBG("\nstart handles section buf->curPosition()= "); DRW_DBG(dbuf->getPosition()); DRW_DBG("\n");
         duint16 size = dbuf->getBERawShort16();
         DRW_DBG("object map section size= "); DRW_DBG(size); DRW_DBG("\n");
@@ -721,7 +722,10 @@ bool dwgReader::readDwgTables(DRW_Header& hdr, dwgBuffer *dbuf) {
         }
     }
 
-    return ret;
+    // Don't abort on partial table failures — return true to allow
+    // entity reading to continue. Layer/linetype/style tables may be
+    // partially parsed, which is better than failing the entire file.
+    return true;
 }
 
 bool dwgReader::readDwgBlocks(DRW_Interface& intfa, dwgBuffer *dbuf){
@@ -779,7 +783,8 @@ bool dwgReader::readDwgBlocks(DRW_Interface& intfa, dwgBuffer *dbuf){
         } else {
             if (version < DRW::AC1018) { //pre 2004
                 duint32 nextH = bkr->firstEH;
-                while (nextH != 0){
+                int maxIter = 100000;
+                while (nextH != 0 && --maxIter > 0){
                     mit = ObjectMap.find(nextH);
                     if (mit==ObjectMap.end()) {
                         nextH = bkr->lastEH;//end while if entity not foud
@@ -857,7 +862,8 @@ bool dwgReader::readPlineVertex(DRW_Polyline& pline, dwgBuffer *dbuf){
 
     if (version < DRW::AC1018) { //pre 2004
         duint32 nextH = pline.firstEH;
-        while (nextH != 0){
+        int maxIter = 100000; // prevent infinite loop
+        while (nextH != 0 && --maxIter > 0){
             mit = ObjectMap.find(nextH);
             if (mit==ObjectMap.end()) {
                 nextH = pline.lastEH;//end while if entity not foud
@@ -939,12 +945,14 @@ bool dwgReader::readDwgEntities(DRW_Interface& intfa, dwgBuffer *dbuf){
     DRW_DBG("\nobject map total size= "); DRW_DBG(ObjectMap.size());
     std::map<duint32, objHandle>::iterator itB=ObjectMap.begin();
     std::map<duint32, objHandle>::iterator itE=ObjectMap.end();
-    while (itB != itE){
+    int maxIter = 500000;
+    int entityCount = 0;
+    while (itB != itE && --maxIter > 0){
+        ++entityCount;
         ret2 = readDwgEntity(dbuf, itB->second, intfa);
         ObjectMap.erase(itB);
         itB=ObjectMap.begin();
-        if (ret)
-            ret = ret2;
+        if (ret) ret = ret2;
     }
     return ret;
 }
@@ -963,6 +971,7 @@ bool dwgReader::readDwgEntity(dwgBuffer *dbuf, objHandle& obj, DRW_Interface& in
     prevEntLink = e.prevEntLink;
 
     nextEntLink = prevEntLink = 0;// set to 0 to skip unimplemented entities
+    try {
         dbuf->setPosition(obj.loc);
         //verify if position is ok:
         if (!dbuf->isGood()){
@@ -970,6 +979,10 @@ bool dwgReader::readDwgEntity(dwgBuffer *dbuf, objHandle& obj, DRW_Interface& in
             return false;
         }
         int size = dbuf->getModularShort();
+        if (size < 0 || size > 0x1000000) { // 16MB sanity limit per entity
+            DRW_DBG(" Warning: readDwgEntity, bad size: "); DRW_DBG(size); DRW_DBG("\n");
+            return false;
+        }
         if (version > DRW::AC1021) {//2010+
             bs = dbuf->getUModularChar();
         }
@@ -1165,6 +1178,13 @@ bool dwgReader::readDwgEntity(dwgBuffer *dbuf, objHandle& obj, DRW_Interface& in
             DRW_DBG("Warning: Entity type "); DRW_DBG(oType);DRW_DBG("has failed, handle: "); DRW_DBG(obj.handle); DRW_DBG("\n");
         }
         delete[]tmpByteStr;
+    } catch (const std::exception& e) {
+        DRW_DBG("Warning: readDwgEntity exception: "); DRW_DBG(e.what()); DRW_DBG(", skipping entity\n");
+        ret = true; // continue reading other entities
+    } catch (...) {
+        DRW_DBG("Warning: readDwgEntity unknown exception, skipping entity\n");
+        ret = true;
+    }
     return ret;
 }
 

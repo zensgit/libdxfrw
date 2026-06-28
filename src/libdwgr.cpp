@@ -145,22 +145,30 @@ bool dwgR::read(DRW_Interface *interface_, bool ext){
     applyExt = ext;
     iface = interface_;
 
-//testReader();return false;
-
     std::ifstream filestr;
     isOk = openFile(&filestr);
     if (!isOk)
         return false;
 
-    isOk = reader->readMetaData();
-    if (isOk) {
-        isOk = reader->readFileHeader();
+    try {
+        isOk = reader->readMetaData();
         if (isOk) {
-            isOk = processDwg();
+            isOk = reader->readFileHeader();
+            if (isOk) {
+                isOk = processDwg();
+            } else
+                error = DRW::BAD_READ_FILE_HEADER;
         } else
-            error = DRW::BAD_READ_FILE_HEADER;
-    } else
-        error = DRW::BAD_READ_METADATA;
+            error = DRW::BAD_READ_METADATA;
+    } catch (const std::exception& e) {
+        DRW_DBG("DWG read exception: "); DRW_DBG(e.what()); DRW_DBG("\n");
+        error = DRW::BAD_READ_FILE_HEADER;
+        isOk = false;
+    } catch (...) {
+        DRW_DBG("DWG read: unknown exception\n");
+        error = DRW::BAD_UNKNOWN;
+        isOk = false;
+    }
 
     filestr.close();
     if (reader != NULL) {
@@ -243,27 +251,16 @@ bool dwgR::processDwg() {
     bool ret2;
     DRW_Header hdr;
     ret = reader->readDwgHeader(hdr);
-    if (!ret) {
-        error = DRW::BAD_READ_HEADER;
-    }
+    if (!ret) error = DRW::BAD_READ_HEADER;
 
     ret2 = reader->readDwgClasses();
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_CLASSES;
-        ret = ret2;
-    }
+    if (ret && !ret2) { error = DRW::BAD_READ_CLASSES; ret = ret2; }
 
     ret2 = reader->readDwgHandles();
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_HANDLES;
-        ret = ret2;
-    }
+    if (ret && !ret2) { error = DRW::BAD_READ_HANDLES; ret = ret2; }
 
     ret2 = reader->readDwgTables(hdr);
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_TABLES;
-        ret = ret2;
-    }
+    if (ret && !ret2) { error = DRW::BAD_READ_TABLES; ret = ret2; }
 
     iface->addHeader(&hdr);
 
@@ -296,23 +293,18 @@ bool dwgR::processDwg() {
         iface->addAppId(const_cast<DRW_AppId&>(*ly));
     }
 
+    // Read blocks, entities, and objects — continue on partial failures.
+    // Individual entity parse errors should not abort the entire file.
     ret2 = reader->readDwgBlocks(*iface);
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_BLOCKS;
-        ret = ret2;
-    }
+    if (!ret2) DRW_DBG("Warning: some blocks failed to parse\n");
 
     ret2 = reader->readDwgEntities(*iface);
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_ENTITIES;
-        ret = ret2;
-    }
+    if (!ret2) DRW_DBG("Warning: some entities failed to parse\n");
 
     ret2 = reader->readDwgObjects(*iface);
-    if (ret && !ret2) {
-        error = DRW::BAD_READ_OBJECTS;
-        ret = ret2;
+    if (!ret2) {
+        DRW_DBG("Warning: some objects failed to parse\n");
     }
 
-    return ret;
+    return ret; // ret is true if header/classes/handles/tables succeeded
 }
