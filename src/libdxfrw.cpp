@@ -2574,6 +2574,7 @@ bool dxfRW::processAttrib() {
     DRW_DBG("dxfRW::processAttrib");
     int code;
     DRW_Text txt;
+    txt.eType = (nextentity == "ATTDEF") ? DRW::ATTDEF : DRW::ATTRIB;
     while (reader->readRec(&code)) {
         DRW_DBG(code); DRW_DBG("\n");
         switch (code) {
@@ -2585,8 +2586,8 @@ bool dxfRW::processAttrib() {
             return true;  //found new entity or ENDSEC, terminate
         }
         case 2:
-            // Attribute tag name (group 2); skip — text value is in group 1
-            reader->getString();
+            // Attribute tag name (group 2); text value is in group 1.
+            txt.attributeTag = reader->getString();
             break;
         default:
             txt.parseCode(code, reader);

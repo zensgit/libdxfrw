@@ -80,6 +80,8 @@ namespace DRW {
         VIEWPORT,
 //        WIPEOUT, //WIPEOUTVARIABLE
         XLINE,
+        ATTRIB,
+        ATTDEF,
         UNKNOWN
     };
 
@@ -691,6 +693,7 @@ public:
     double widthscale;         /*!< width factor, code 41 */
     double oblique;            /*!< oblique angle, code 51 */
     UTF8STRING style;          /*!< style name, code 7 */
+    UTF8STRING attributeTag;   /*!< ATTRIB/ATTDEF tag name, code 2 */
     int textgen;               /*!< text generation, code 71 */
     enum HAlign alignH;        /*!< horizontal align, code 72 */
     enum VAlign alignV;        /*!< vertical align, code 73 */
@@ -1518,4 +1521,3 @@ private:
 #endif
 
 // EOF
-
